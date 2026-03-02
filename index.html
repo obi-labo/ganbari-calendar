@@ -211,6 +211,28 @@ body {
 .day-cell.future { opacity: 0.3; cursor: default; }
 .day-cell.sunday .day-num { color: var(--pop1); }
 .day-cell.saturday .day-num { color: var(--pop4); }
+.day-cell.weekend {
+  background: rgba(80,80,160,0.04);
+  box-shadow: none;
+  cursor: default;
+  opacity: 0.45;
+}
+.day-cell.weekend:hover { transform: none; box-shadow: none; border-color: transparent; }
+.day-cell.has-yasumi {
+  background: linear-gradient(145deg, #f0f8ff, #e6f4ff);
+}
+.stamp.yasumi {
+  font-size: clamp(10px,1.8vw,14px);
+  background: rgba(77,150,255,0.12);
+  border: 2px solid var(--pop4);
+  border-radius: 6px;
+  width: clamp(22px,4vw,32px);
+  height: clamp(20px,3.5vw,26px);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pop4); font-weight: 900;
+  letter-spacing: -0.02em;
+  animation: stampIn 0.32s cubic-bezier(0.34,1.56,0.64,1);
+}
 .day-cell.today {
   border-color: var(--pop4);
   background: linear-gradient(145deg, #f0f6ff, #e6f0ff);
@@ -379,9 +401,105 @@ body {
   .ach-num { font-size:22px; }
   .tab-btn { padding:12px 12px; font-size:12px; }
 }
+
+/* ===== PIN LOCK ===== */
+#pinLock {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(145deg, #2d2d44, #1a1a2e);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 24px;
+}
+#pinLock h2 {
+  font-family: 'Nunito', sans-serif;
+  color: white; font-size: 22px; font-weight: 900;
+  letter-spacing: 0.05em;
+}
+#pinLock .pin-subtitle {
+  color: rgba(255,255,255,0.45);
+  font-size: 13px; font-weight: 700; margin-top: -16px;
+}
+.pin-dots {
+  display: flex; gap: 16px;
+}
+.pin-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.pin-dot.filled {
+  background: var(--pop2);
+  border-color: var(--pop2);
+  transform: scale(1.15);
+}
+.pin-dot.error {
+  background: var(--pop1);
+  border-color: var(--pop1);
+  animation: shake 0.4s ease;
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(6px)}
+}
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 260px;
+}
+.pin-key {
+  background: rgba(255,255,255,0.08);
+  border: none; border-radius: 18px;
+  color: white; font-size: 24px; font-weight: 900;
+  font-family: 'Nunito', sans-serif;
+  padding: 18px 0;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.1s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-key:hover { background: rgba(255,255,255,0.16); }
+.pin-key:active { transform: scale(0.92); background: rgba(255,255,255,0.22); }
+.pin-key.del { font-size: 18px; }
+.pin-key.empty { pointer-events: none; background: transparent; }
+.pin-error-msg {
+  color: var(--pop1); font-size: 13px; font-weight: 800;
+  height: 18px; text-align: center;
+}
 </style>
 </head>
 <body>
+
+<!-- ===== PIN LOCK SCREEN ===== -->
+<div id="pinLock">
+  <h2>🔑 がんばりカレンダー</h2>
+  <p class="pin-subtitle">PINコードを入力してね</p>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+  </div>
+  <div class="pin-error-msg" id="pinError"></div>
+  <div class="pin-keypad">
+    <button class="pin-key" onclick="pinInput('1')">1</button>
+    <button class="pin-key" onclick="pinInput('2')">2</button>
+    <button class="pin-key" onclick="pinInput('3')">3</button>
+    <button class="pin-key" onclick="pinInput('4')">4</button>
+    <button class="pin-key" onclick="pinInput('5')">5</button>
+    <button class="pin-key" onclick="pinInput('6')">6</button>
+    <button class="pin-key" onclick="pinInput('7')">7</button>
+    <button class="pin-key" onclick="pinInput('8')">8</button>
+    <button class="pin-key" onclick="pinInput('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinInput('0')">0</button>
+    <button class="pin-key del" onclick="pinDelete()">⌫</button>
+  </div>
+</div>
+
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('Calendar',this)">📅 カレンダー</button>
@@ -427,6 +545,7 @@ body {
   </div>
 
   <div class="legend">
+    <div class="legend-item">📘 休（祝日・休校日）</div>
     <div class="legend-item">🔴 しゅくだいていしゅつ</div>
     <div class="legend-item">⭐ 1じかん以上じゅぎょう</div>
     <div class="legend-item">🏅 1日じゅぎょう！</div>
@@ -514,6 +633,8 @@ body {
 <div class="overlay" id="overlay"></div>
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-title" id="ctxTitle">〇月〇日</div>
+  <button class="ctx-btn" id="btnYasumi"><span class="icon">📘</span>休（祝日・休校日）</button>
+  <div style="border-top:1.5px dashed rgba(80,80,160,0.1);margin:2px 0"></div>
   <button class="ctx-btn" id="btnHanko"><span class="icon">🔴</span>しゅくだいていしゅつ</button>
   <button class="ctx-btn" id="btnStar"><span class="icon">⭐</span>★シール（1じかん以上）</button>
   <button class="ctx-btn" id="btnGold"><span class="icon">🏅</span>ゴールドシール（1日！）</button>
@@ -550,7 +671,7 @@ function loadLocal(){ try{const r=localStorage.getItem('ganbari_cache');if(r)dat
 async function saveData(key, rec){
   setStatus('syncing');
   try{
-    const hasData = rec && (rec.hanko || rec.star || rec.gold);
+    const hasData = rec && (rec.hanko || rec.star || rec.gold || rec.yasumi);
     if(hasData){
       await setDoc(doc(db, COLLECTION, key), rec);
     } else {
@@ -588,6 +709,73 @@ function startSync(){
       setStatus('offline');
     }
   );
+}
+
+
+// ===== PIN LOCK =====
+const CORRECT_PIN = '0405';
+let pinCurrent = '';
+let pinLocked = true;
+
+function checkSessionUnlocked() {
+  // セッション中は一度解除したら保持
+  return sessionStorage.getItem('pin_unlocked') === '1';
+}
+
+function unlockApp() {
+  pinLocked = false;
+  sessionStorage.setItem('pin_unlocked', '1');
+  const lock = document.getElementById('pinLock');
+  lock.style.transition = 'opacity 0.4s';
+  lock.style.opacity = '0';
+  setTimeout(() => lock.style.display = 'none', 400);
+}
+
+function pinInput(digit) {
+  if(pinCurrent.length >= 4) return;
+  pinCurrent += digit;
+  updateDots();
+  if(pinCurrent.length === 4) {
+    if(pinCurrent === CORRECT_PIN) {
+      // 正解
+      document.querySelectorAll('.pin-dot').forEach(d => {
+        d.classList.remove('error'); d.classList.add('filled');
+      });
+      setTimeout(unlockApp, 300);
+    } else {
+      // 不正解
+      document.querySelectorAll('.pin-dot').forEach(d => {
+        d.classList.remove('filled'); d.classList.add('error');
+      });
+      document.getElementById('pinError').textContent = '❌ ちがうよ！もういちど';
+      setTimeout(() => {
+        pinCurrent = '';
+        updateDots();
+        document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+        document.getElementById('pinError').textContent = '';
+      }, 800);
+    }
+  }
+}
+
+function pinDelete() {
+  if(pinCurrent.length === 0) return;
+  pinCurrent = pinCurrent.slice(0, -1);
+  updateDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function updateDots() {
+  for(let i=0; i<4; i++){
+    const dot = document.getElementById('dot'+i);
+    dot.classList.toggle('filled', i < pinCurrent.length);
+  }
+}
+
+// セッション内で既に解除済みならスキップ
+if(checkSessionUnlocked()) {
+  document.getElementById('pinLock').style.display = 'none';
+  pinLocked = false;
 }
 
 function init(){
@@ -646,21 +834,27 @@ function render(){
     const isToday=isCurrent&&today.getDate()===d;
     const isFuture=date>today;
 
+    const isWeekend = (dow===0||dow===6);
+
     const cell=document.createElement('div');
     cell.className='day-cell';
     if(dow===0)cell.classList.add('sunday');
     if(dow===6)cell.classList.add('saturday');
+    if(isWeekend)cell.classList.add('weekend');
     if(isToday)cell.classList.add('today');
     if(isFuture)cell.classList.add('future');
     if(rec.gold)cell.classList.add('has-gold');
+    if(rec.yasumi)cell.classList.add('has-yasumi');
 
     cell.innerHTML=`<div class="day-num">${d}</div><div class="stamps-area"></div>`;
     const stamps=cell.querySelector('.stamps-area');
+    if(rec.yasumi){const s=document.createElement('div');s.className='stamp yasumi';s.textContent='休';stamps.appendChild(s);}
     if(rec.hanko){const s=document.createElement('div');s.className='stamp hanko';s.textContent='◯';stamps.appendChild(s);}
     if(rec.star){const s=document.createElement('div');s.className='stamp star';s.textContent='⭐';stamps.appendChild(s);}
     if(rec.gold){const s=document.createElement('div');s.className='stamp gold';s.textContent='🏅';stamps.appendChild(s);}
 
-    if(!isFuture) cell.addEventListener('click',e=>{e.stopPropagation();openMenu(d,key,e);});
+    // 土日はクリック不可、それ以外（未来含め祝日設定のため過去のみ制限しない）
+    if(!isWeekend && !isFuture) cell.addEventListener('click',e=>{e.stopPropagation();openMenu(d,key,e);});
     grid.appendChild(cell);
   }
   renderAchievements();
@@ -685,6 +879,8 @@ function openMenu(day,key,e){
   selectedDate={day,key};
   const rec=data[key]||{};
   document.getElementById('ctxTitle').textContent=`${currentMonth+1}月${day}日`;
+  document.getElementById('btnYasumi').innerHTML=`<span class="icon">📘</span>${rec.yasumi?'✅ ':''}休（祝日・休校日）`;
+  document.getElementById('btnYasumi').className='ctx-btn'+(rec.yasumi?' checked':'');
   document.getElementById('btnHanko').innerHTML=`<span class="icon">🔴</span>${rec.hanko?'✅ ':''}しゅくだいていしゅつ`;
   document.getElementById('btnHanko').className='ctx-btn'+(rec.hanko?' checked':'');
   document.getElementById('btnStar').innerHTML=`<span class="icon">⭐</span>${rec.star?'✅ ':''}★シール（1じかん以上）`;
@@ -720,6 +916,7 @@ function toggle(field){
   closeMenu();render();
 }
 
+document.getElementById('btnYasumi').addEventListener('click',()=>toggle('yasumi'));
 document.getElementById('btnHanko').addEventListener('click',()=>toggle('hanko'));
 document.getElementById('btnStar').addEventListener('click',()=>toggle('star'));
 document.getElementById('btnGold').addEventListener('click',()=>toggle('gold'));
