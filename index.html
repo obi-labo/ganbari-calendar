@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>がんばりカレンダー ✨</title>
+<meta name="application-name" content="がんばりカレンダー">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="がんばり">
+<meta name="theme-color" content="#2d2d44">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pop1: #ff6b9d;
+  --pop2: #ffd93d;
+  --pop3: #6bcb77;
+  --pop4: #4d96ff;
+  --pop5: #ff922b;
+  --pop6: #cc5de8;
+  --bg: #f0f4ff;
+  --white: #ffffff;
+  --ink: #2d2d44;
+  --ink2: #6b6b8a;
+  --shadow: rgba(80,80,160,0.10);
+  --shadow2: rgba(80,80,160,0.18);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'M PLUS Rounded 1c', 'Nunito', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(255,107,157,0.18) 0%, transparent 38%),
+    radial-gradient(circle at 92% 85%, rgba(77,150,255,0.15) 0%, transparent 38%),
+    radial-gradient(circle at 55% 50%, rgba(255,217,61,0.10) 0%, transparent 50%);
+}
+
+/* ===== TAB BAR ===== */
+.tab-bar {
+  display: flex;
+  background: var(--ink);
+  position: sticky; top: 0; z-index: 200;
+  padding: 0 16px;
+  box-shadow: 0 3px 20px rgba(45,45,68,0.25);
+}
+.tab-btn {
+  padding: 14px 22px;
+  border: none; background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 14px; font-weight: 800;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.18s;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.tab-btn.active { color: var(--pop2); border-bottom-color: var(--pop2); }
+.tab-btn:hover { color: rgba(255,255,255,0.85); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== WRAPPER ===== */
+.wrapper { max-width: 920px; margin: 0 auto; padding: 20px 16px 60px; }
+
+/* ===== HEADER ===== */
+.main-header {
+  text-align: center;
+  padding: 28px 0 16px;
+}
+.main-header h1 {
+  font-family: 'Nunito', 'M PLUS Rounded 1c', sans-serif;
+  font-size: clamp(26px, 6vw, 46px);
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  flex-wrap: wrap;
+}
+.h1-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--pop1), var(--pop6));
+  color: white;
+  border-radius: 14px;
+  padding: 2px 14px;
+  font-size: 0.55em;
+  vertical-align: middle;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 14px rgba(255,107,157,0.35);
+}
+.main-header .tagline {
+  margin-top: 6px;
+  font-size: 13px; color: var(--ink2); font-weight: 700; letter-spacing: 0.08em;
+}
+
+/* ===== ACH BANNER ===== */
+.ach-banner {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+@media(max-width:600px){ .ach-banner { grid-template-columns: repeat(2,1fr); } }
+
+.ach-card {
+  border-radius: 22px;
+  padding: 16px 10px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 18px var(--shadow);
+  cursor: default;
+}
+.ach-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px var(--shadow2); }
+.ach-card.c-streak { background: linear-gradient(145deg,#fff0f8,#ffe4f2); border: 2px solid rgba(255,107,157,0.25); }
+.ach-card.c-hanko  { background: linear-gradient(145deg,#fff5f0,#ffe8e0); border: 2px solid rgba(255,146,43,0.25); }
+.ach-card.c-star   { background: linear-gradient(145deg,#fffff0,#fff9d0); border: 2px solid rgba(255,217,61,0.35); }
+.ach-card.c-gold   { background: linear-gradient(145deg,#f6fff0,#e8fae0); border: 2px solid rgba(107,203,119,0.3); }
+
+.ach-emoji { font-size: 30px; line-height: 1; }
+.ach-num { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1.1; }
+.ach-label { font-size: 10px; color: var(--ink2); font-weight: 800; text-align: center; letter-spacing: 0.04em; }
+
+.streak-fire { animation: fireWiggle 0.9s ease-in-out infinite; display:inline-block; }
+@keyframes fireWiggle {
+  0%,100% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(8deg) scale(1.15); }
+}
+
+/* ===== LEGEND ===== */
+.legend {
+  display: flex; justify-content: center; gap: 14px;
+  flex-wrap: wrap; margin-bottom: 18px;
+  padding: 12px 20px;
+  background: var(--white); border-radius: 18px;
+  box-shadow: 0 3px 14px var(--shadow);
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 800; color: var(--ink2);
+}
+
+/* ===== MONTH NAV ===== */
+.month-nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin-bottom: 14px;
+}
+.month-nav button {
+  background: var(--white); border: none; border-radius: 50%;
+  width: 42px; height: 42px; font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink);
+}
+.month-nav button:hover {
+  background: var(--pop4); color: white;
+  transform: scale(1.12);
+  box-shadow: 0 6px 20px rgba(77,150,255,0.4);
+}
+.month-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 24px; font-weight: 900; color: var(--ink);
+  min-width: 160px; text-align: center;
+}
+
+/* ===== WEEKDAYS ===== */
+.weekdays {
+  display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin-bottom: 5px;
+}
+.weekday {
+  text-align: center; font-size: 11px; font-weight: 900;
+  padding: 7px 0; border-radius: 10px; letter-spacing: 0.04em;
+}
+.weekday.sun { color: var(--pop1); background: rgba(255,107,157,0.1); }
+.weekday.sat { color: var(--pop4); background: rgba(77,150,255,0.1); }
+.weekday.week { color: var(--ink2); background: rgba(80,80,160,0.05); }
+
+/* ===== CALENDAR GRID ===== */
+.calendar-grid {
+  display: grid; grid-template-columns: repeat(7,1fr); gap: 5px;
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  background: var(--white);
+  border-radius: 18px;
+  box-shadow: 0 2px 10px var(--shadow);
+  position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none; overflow: hidden;
+  min-height: 66px;
+  border: 2.5px solid transparent;
+}
+.day-cell:hover:not(.empty):not(.future) {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 10px 28px var(--shadow2);
+  z-index: 2;
+  border-color: var(--pop4);
+}
+.day-cell.empty { background: transparent; box-shadow: none; cursor: default; }
+.day-cell.future { opacity: 0.3; cursor: default; }
+.day-cell.sunday .day-num { color: var(--pop1); }
+.day-cell.saturday .day-num { color: var(--pop4); }
+.day-cell.today {
+  border-color: var(--pop4);
+  background: linear-gradient(145deg, #f0f6ff, #e6f0ff);
+}
+.day-cell.today::after {
+  content: '今日';
+  position: absolute; top: 3px; right: 4px;
+  font-size: 7px; font-weight: 900; color: var(--pop4);
+  background: rgba(77,150,255,0.12);
+  padding: 1px 4px; border-radius: 4px;
+}
+.day-cell.has-gold {
+  background: linear-gradient(145deg, #fffff0, #fffce6);
+}
+
+.day-num {
+  font-size: clamp(13px,2.2vw,18px);
+  font-weight: 900; color: var(--ink);
+  line-height: 1; margin-bottom: 4px; z-index: 1;
+}
+
+.stamps-area {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; z-index: 1;
+}
+.stamp { font-size: clamp(13px,2.5vw,20px); line-height: 1; }
+.stamp.hanko {
+  font-size: clamp(10px,1.8vw,15px);
+  background: rgba(255,107,157,0.12);
+  border: 2px solid var(--pop1);
+  border-radius: 50%;
+  width: clamp(20px,3.4vw,28px);
+  height: clamp(20px,3.4vw,28px);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pop1); font-weight: 900;
+  animation: stampIn 0.32s cubic-bezier(0.34,1.56,0.64,1);
+}
+.stamp.star { animation: stickerIn 0.32s cubic-bezier(0.34,1.56,0.64,1); }
+.stamp.gold { animation: goldIn 0.38s cubic-bezier(0.34,1.56,0.64,1); }
+
+@keyframes stampIn { 0%{transform:scale(3) rotate(-20deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+@keyframes stickerIn { 0%{transform:scale(0) rotate(30deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+@keyframes goldIn { 0%{transform:scale(0) rotate(-30deg);opacity:0} 60%{transform:scale(1.2) rotate(5deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+
+/* ===== CONTEXT MENU ===== */
+.ctx-menu {
+  position: fixed;
+  background: var(--white); border-radius: 24px;
+  box-shadow: 0 12px 48px rgba(45,45,68,0.2);
+  padding: 14px; z-index: 300;
+  display: none; gap: 8px; flex-direction: column;
+  min-width: 210px;
+  animation: popIn 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  border: 2px solid rgba(77,150,255,0.12);
+}
+@keyframes popIn { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+.ctx-menu.show { display: flex; }
+.ctx-title {
+  font-size: 13px; font-weight: 900; color: var(--pop4);
+  text-align: center; padding-bottom: 8px;
+  border-bottom: 2px dashed rgba(77,150,255,0.15);
+  letter-spacing: 0.06em;
+}
+.ctx-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border: none;
+  background: var(--bg); border-radius: 16px;
+  cursor: pointer; font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 13px; font-weight: 800; color: var(--ink);
+  transition: background 0.13s, transform 0.1s;
+}
+.ctx-btn:hover { background: #e6edff; transform: scale(1.02); }
+.ctx-btn .icon { font-size: 20px; }
+.ctx-btn.checked { background: rgba(107,203,119,0.15); color: #2d7a3d; }
+.ctx-btn.remove { color: #b0b0cc; }
+.ctx-btn.remove:hover { background: rgba(255,107,157,0.1); color: var(--pop1); }
+
+.overlay { position: fixed; inset: 0; z-index: 250; display: none; }
+.overlay.show { display: block; }
+
+/* ===== MONTH STATS ===== */
+.stats {
+  margin-top: 18px; display: flex; gap: 10px;
+  flex-wrap: wrap; justify-content: center;
+}
+.stat-card {
+  background: var(--white); border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow: 0 3px 14px var(--shadow);
+  text-align: center; flex: 1; min-width: 110px; max-width: 150px;
+}
+.stat-icon { font-size: 24px; }
+.stat-num { font-size: 26px; font-weight: 900; color: var(--ink); line-height: 1.2; }
+.stat-label { font-size: 10px; color: var(--ink2); font-weight: 800; margin-top: 2px; }
+
+/* ===== REVIEW TAB ===== */
+.review-section {
+  background: var(--white); border-radius: 24px;
+  padding: 24px; margin-bottom: 18px;
+  box-shadow: 0 4px 18px var(--shadow);
+}
+.review-section h2 {
+  font-family: 'Nunito', sans-serif;
+  font-size: 17px; font-weight: 900; color: var(--ink);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex; align-items: flex-end; gap: 6px;
+  height: 160px; padding-bottom: 24px; position: relative;
+}
+.bar-chart::after {
+  content:''; position: absolute; bottom: 24px; left:0; right:0;
+  border-bottom: 2px dashed rgba(80,80,160,0.12);
+}
+.bar-col { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+.bar-wrap { width:100%; display:flex; flex-direction:column; justify-content:flex-end; height:120px; gap:2px; }
+.bar { width:100%; border-radius: 8px 8px 0 0; min-height: 2px; position: relative; transition: height 0.6s cubic-bezier(0.34,1.1,0.64,1); }
+.bar.hanko-bar { background: linear-gradient(180deg,#ff9abf,var(--pop1)); }
+.bar.star-bar   { background: linear-gradient(180deg,#ffe97a,var(--pop2)); }
+.bar.gold-bar   { background: linear-gradient(180deg,#a0e8a0,var(--pop3)); }
+.bar-label { font-size: 10px; font-weight: 900; color: var(--ink2); }
+.bar-val { font-size: 9px; font-weight: 900; color: var(--ink); position: absolute; top:-14px; left:50%; transform:translateX(-50%); white-space:nowrap; }
+.bar-legend { display:flex; gap:14px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+.bar-legend-item { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:800; color:var(--ink2); }
+.bar-legend-dot { width:10px; height:10px; border-radius:3px; }
+
+/* Week grid */
+.week-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); gap:10px; }
+.week-card {
+  background: var(--bg); border-radius: 16px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.week-card-title { font-size: 11px; font-weight: 800; color: var(--ink2); }
+.week-rate-bar { background: rgba(80,80,160,0.1); border-radius: 8px; height: 10px; overflow:hidden; }
+.week-rate-fill { height:100%; border-radius:8px; background: linear-gradient(90deg, var(--pop4), var(--pop6)); transition: width 0.8s cubic-bezier(0.34,1.1,0.64,1); }
+.week-rate-num { font-size: 22px; font-weight: 900; color: var(--ink); }
+.week-rate-sub { font-size: 10px; color: var(--ink2); font-weight: 700; }
+
+/* ===== DATA TAB ===== */
+.data-toolbar { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+.tool-btn {
+  display:flex; align-items:center; gap:7px;
+  padding: 11px 20px; border: none;
+  background: var(--white); border-radius: 16px;
+  cursor: pointer; font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 13px; font-weight: 800; color: var(--ink);
+  box-shadow: 0 3px 12px var(--shadow);
+  border: 2px solid rgba(80,80,160,0.1);
+  transition: all 0.15s;
+}
+.tool-btn:hover { background: var(--pop4); color:white; transform:translateY(-2px); box-shadow: 0 6px 22px rgba(77,150,255,0.4); }
+.tool-btn .icon { font-size: 16px; }
+
+/* ===== PRINT ===== */
+@media print {
+  .tab-bar, .data-toolbar, .ctx-menu, .overlay, #tabReview, #tabData { display:none !important; }
+  body { background: white; }
+  #tabCalendar { display: block !important; }
+  .day-cell { box-shadow:none !important; border:1px solid #ddd !important; }
+  .ach-card { box-shadow: none !important; }
+}
+
+@media(max-width:480px){
+  .day-cell { border-radius:12px; min-height:52px; }
+  .ach-num { font-size:22px; }
+  .tab-btn { padding:12px 12px; font-size:12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('Calendar',this)">📅 カレンダー</button>
+  <button class="tab-btn" onclick="switchTab('Review',this)">📊 ふりかえり</button>
+  <button class="tab-btn" onclick="switchTab('Data',this)">💾 データ</button>
+</div>
+
+<!-- Sync status bar -->
+<div style="text-align:center;padding:5px;font-size:12px;font-weight:800;background:rgba(255,255,255,0.7);letter-spacing:0.05em">
+  <span id="syncStatus">🔄 接続中…</span>
+</div>
+
+<!-- ======= CALENDAR ======= -->
+<div class="tab-content active" id="tabCalendar">
+<div class="wrapper">
+
+  <div class="main-header">
+    <h1>🌈 がんばりカレンダー <span class="h1-badge">まいにち</span></h1>
+    <p class="tagline">きょうのがんばりをきろくしよう！</p>
+  </div>
+
+  <div class="ach-banner">
+    <div class="ach-card c-streak">
+      <div class="ach-emoji"><span class="streak-fire">🔥</span></div>
+      <div class="ach-num" id="achStreak">0</div>
+      <div class="ach-label">れんぞくハンコ</div>
+    </div>
+    <div class="ach-card c-hanko">
+      <div class="ach-emoji">🔴</div>
+      <div class="ach-num" id="achHanko">0</div>
+      <div class="ach-label">ハンコ累計</div>
+    </div>
+    <div class="ach-card c-star">
+      <div class="ach-emoji">⭐</div>
+      <div class="ach-num" id="achStar">0</div>
+      <div class="ach-label">★シール累計</div>
+    </div>
+    <div class="ach-card c-gold">
+      <div class="ach-emoji">🏅</div>
+      <div class="ach-num" id="achGold">0</div>
+      <div class="ach-label">ゴールド累計</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">🔴 しゅくだいていしゅつ</div>
+    <div class="legend-item">⭐ 1じかん以上じゅぎょう</div>
+    <div class="legend-item">🏅 1日じゅぎょう！</div>
+  </div>
+
+  <div class="month-nav">
+    <button id="prevBtn">◀</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button id="nextBtn">▶</button>
+  </div>
+
+  <div class="weekdays">
+    <div class="weekday sun">日</div>
+    <div class="weekday week">月</div>
+    <div class="weekday week">火</div>
+    <div class="weekday week">水</div>
+    <div class="weekday week">木</div>
+    <div class="weekday week">金</div>
+    <div class="weekday sat">土</div>
+  </div>
+
+  <div class="calendar-grid" id="calendarGrid"></div>
+  <div class="stats" id="statsArea"></div>
+
+</div>
+</div>
+
+<!-- ======= REVIEW ======= -->
+<div class="tab-content" id="tabReview">
+<div class="wrapper">
+  <div style="padding-top:20px">
+
+    <div class="review-section">
+      <h2>📈 月ごとのきろく（過去6ヶ月）</h2>
+      <div class="bar-chart" id="barChart"></div>
+      <div class="bar-legend">
+        <div class="bar-legend-item"><div class="bar-legend-dot" style="background:var(--pop1)"></div>ハンコ🔴</div>
+        <div class="bar-legend-item"><div class="bar-legend-dot" style="background:var(--pop2)"></div>★シール⭐</div>
+        <div class="bar-legend-item"><div class="bar-legend-dot" style="background:var(--pop3)"></div>ゴールド🏅</div>
+      </div>
+    </div>
+
+    <div class="review-section">
+      <h2>📅 週ごとの達成率（ハンコ🔴）</h2>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ======= DATA ======= -->
+<div class="tab-content" id="tabData">
+<div class="wrapper" style="padding-top:28px">
+
+  <div class="review-section">
+    <h2>💾 データのほぞん・よみこみ</h2>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:18px;line-height:1.9;">
+      JSONファイルとしてエクスポートしてバックアップできます。<br>
+      スマホを変えたときや、データが消えてしまったときに使えます！
+    </p>
+    <div class="data-toolbar">
+      <button class="tool-btn" onclick="exportData()"><span class="icon">📤</span> エクスポート（保存）</button>
+      <button class="tool-btn" onclick="document.getElementById('importFile').click()"><span class="icon">📥</span> インポート（読込）</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="tool-btn" onclick="printCalendar()"><span class="icon">🖨️</span> 印刷する</button>
+    </div>
+    <p style="font-size:11px;color:#b0b0cc;margin-top:12px;text-align:center">
+      ※ データはこのブラウザ（localStorage）に自動保存されています
+    </p>
+  </div>
+
+  <div class="review-section">
+    <h2>🗑️ データのリセット</h2>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;">全データを消します。元に戻せないので気をつけて！</p>
+    <button class="tool-btn" onclick="resetData()" style="background:rgba(255,107,157,0.1);border-color:rgba(255,107,157,0.3);color:var(--pop1)">
+      <span class="icon">⚠️</span> 全データをリセット
+    </button>
+  </div>
+
+</div>
+</div>
+
+<!-- Context Menu -->
+<div class="overlay" id="overlay"></div>
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-title" id="ctxTitle">〇月〇日</div>
+  <button class="ctx-btn" id="btnHanko"><span class="icon">🔴</span>しゅくだいていしゅつ</button>
+  <button class="ctx-btn" id="btnStar"><span class="icon">⭐</span>★シール（1じかん以上）</button>
+  <button class="ctx-btn" id="btnGold"><span class="icon">🏅</span>ゴールドシール（1日！）</button>
+  <button class="ctx-btn remove" id="btnRemove"><span class="icon">✕</span>ぜんぶけす</button>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAYqAAG1R7yxIJ9ex9ZUmZ7mMFKcZdJmpU",
+  authDomain: "ganbari-calendar.firebaseapp.com",
+  projectId: "ganbari-calendar",
+  storageBucket: "ganbari-calendar.firebasestorage.app",
+  messagingSenderId: "768805662809",
+  appId: "1:768805662809:web:fa8a88cb12648da9664148"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const COLLECTION = 'calendar';
+
+let data = {};
+let currentYear, currentMonth, selectedDate = null;
+
+function getKey(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+// ローカルキャッシュ（オフライン時のフォールバック）
+function saveLocal(){ try{localStorage.setItem('ganbari_cache', JSON.stringify(data));}catch(e){} }
+function loadLocal(){ try{const r=localStorage.getItem('ganbari_cache');if(r)data=JSON.parse(r);}catch(e){} }
+
+// Firestoreに1日分を保存・削除
+async function saveData(key, rec){
+  setStatus('syncing');
+  try{
+    const hasData = rec && (rec.hanko || rec.star || rec.gold);
+    if(hasData){
+      await setDoc(doc(db, COLLECTION, key), rec);
+    } else {
+      await deleteDoc(doc(db, COLLECTION, key));
+    }
+  }catch(e){
+    console.warn('Firebase保存失敗:', e);
+    setStatus('offline');
+  }
+}
+
+// 接続・同期状態の表示
+function setStatus(state){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  if(state==='synced')  { el.textContent='☁️ 同期済み';   el.style.color='#6bcb77'; }
+  if(state==='syncing') { el.textContent='🔄 同期中…';    el.style.color='#ffd93d'; }
+  if(state==='offline') { el.textContent='📵 オフライン'; el.style.color='#ff6b9d'; }
+}
+
+// Firestoreリアルタイム監視
+function startSync(){
+  setStatus('syncing');
+  onSnapshot(
+    collection(db, COLLECTION),
+    (snapshot) => {
+      data = {};
+      snapshot.forEach(d => { data[d.id] = d.data(); });
+      saveLocal();
+      setStatus('synced');
+      render();
+    },
+    (err) => {
+      console.warn('同期エラー:', err);
+      setStatus('offline');
+    }
+  );
+}
+
+function init(){
+  loadLocal(); // まずローカルで即表示
+  const now=new Date();
+  currentYear=now.getFullYear(); currentMonth=now.getMonth();
+  render();
+  startSync(); // Firestore監視スタート
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='Review') renderReview();
+}
+
+function calcStreak(){
+  const today=new Date(); let streak=0; const d=new Date(today);
+  while(true){
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(data[key]&&data[key].hanko){streak++;d.setDate(d.getDate()-1);}else break;
+  }
+  return streak;
+}
+
+function renderAchievements(){
+  let h=0,s=0,g=0;
+  Object.values(data).forEach(r=>{if(r.hanko)h++;if(r.star)s++;if(r.gold)g++;});
+  const streak=calcStreak();
+  document.getElementById('achStreak').textContent=streak;
+  document.getElementById('achHanko').textContent=h;
+  document.getElementById('achStar').textContent=s;
+  document.getElementById('achGold').textContent=g;
+  const fire=document.querySelector('.streak-fire');
+  fire.style.animationPlayState=streak>0?'running':'paused';
+}
+
+function render(){
+  const grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+  document.getElementById('monthLabel').textContent=`${currentYear}年 ${currentMonth+1}月`;
+  const firstDay=new Date(currentYear,currentMonth,1).getDay();
+  const daysInMonth=new Date(currentYear,currentMonth+1,0).getDate();
+  const today=new Date();
+  const isCurrent=today.getFullYear()===currentYear&&today.getMonth()===currentMonth;
+
+  for(let i=0;i<firstDay;i++){const el=document.createElement('div');el.className='day-cell empty';grid.appendChild(el);}
+
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(currentYear,currentMonth,d);
+    const dow=date.getDay();
+    const key=getKey(currentYear,currentMonth,d);
+    const rec=data[key]||{};
+    const isToday=isCurrent&&today.getDate()===d;
+    const isFuture=date>today;
+
+    const cell=document.createElement('div');
+    cell.className='day-cell';
+    if(dow===0)cell.classList.add('sunday');
+    if(dow===6)cell.classList.add('saturday');
+    if(isToday)cell.classList.add('today');
+    if(isFuture)cell.classList.add('future');
+    if(rec.gold)cell.classList.add('has-gold');
+
+    cell.innerHTML=`<div class="day-num">${d}</div><div class="stamps-area"></div>`;
+    const stamps=cell.querySelector('.stamps-area');
+    if(rec.hanko){const s=document.createElement('div');s.className='stamp hanko';s.textContent='◯';stamps.appendChild(s);}
+    if(rec.star){const s=document.createElement('div');s.className='stamp star';s.textContent='⭐';stamps.appendChild(s);}
+    if(rec.gold){const s=document.createElement('div');s.className='stamp gold';s.textContent='🏅';stamps.appendChild(s);}
+
+    if(!isFuture) cell.addEventListener('click',e=>{e.stopPropagation();openMenu(d,key,e);});
+    grid.appendChild(cell);
+  }
+  renderAchievements();
+  renderStats();
+}
+
+function renderStats(){
+  const area=document.getElementById('statsArea');
+  area.innerHTML='';
+  let h=0,s=0,g=0;
+  const days=new Date(currentYear,currentMonth+1,0).getDate();
+  for(let d=1;d<=days;d++){const r=data[getKey(currentYear,currentMonth,d)]||{};if(r.hanko)h++;if(r.star)s++;if(r.gold)g++;}
+  [{icon:'🔴',num:h,label:'この月のハンコ'},{icon:'⭐',num:s,label:'この月の★シール'},{icon:'🏅',num:g,label:'この月のゴールド'}]
+  .forEach(st=>{
+    const c=document.createElement('div');c.className='stat-card';
+    c.innerHTML=`<div class="stat-icon">${st.icon}</div><div class="stat-num">${st.num}</div><div class="stat-label">${st.label}</div>`;
+    area.appendChild(c);
+  });
+}
+
+function openMenu(day,key,e){
+  selectedDate={day,key};
+  const rec=data[key]||{};
+  document.getElementById('ctxTitle').textContent=`${currentMonth+1}月${day}日`;
+  document.getElementById('btnHanko').innerHTML=`<span class="icon">🔴</span>${rec.hanko?'✅ ':''}しゅくだいていしゅつ`;
+  document.getElementById('btnHanko').className='ctx-btn'+(rec.hanko?' checked':'');
+  document.getElementById('btnStar').innerHTML=`<span class="icon">⭐</span>${rec.star?'✅ ':''}★シール（1じかん以上）`;
+  document.getElementById('btnStar').className='ctx-btn'+(rec.star?' checked':'');
+  document.getElementById('btnGold').innerHTML=`<span class="icon">🏅</span>${rec.gold?'✅ ':''}ゴールドシール（1日！）`;
+  document.getElementById('btnGold').className='ctx-btn'+(rec.gold?' checked':'');
+
+  const menu=document.getElementById('ctxMenu');
+  menu.classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  const x=Math.min(e.clientX,window.innerWidth-230);
+  const y=Math.min(e.clientY+8,window.innerHeight-240);
+  menu.style.left=x+'px'; menu.style.top=y+'px';
+}
+
+function closeMenu(){
+  document.getElementById('ctxMenu').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+  selectedDate=null;
+}
+
+document.getElementById('overlay').addEventListener('click',closeMenu);
+
+function toggle(field){
+  if(!selectedDate)return;
+  const key=selectedDate.key;
+  if(!data[key])data[key]={};
+  data[key][field]=!data[key][field];
+  if(field==='gold'&&data[key][field])data[key]['star']=false;
+  if(field==='star'&&data[key][field])data[key]['gold']=false;
+  saveData(key, data[key]); // Firestore保存
+  saveLocal();
+  closeMenu();render();
+}
+
+document.getElementById('btnHanko').addEventListener('click',()=>toggle('hanko'));
+document.getElementById('btnStar').addEventListener('click',()=>toggle('star'));
+document.getElementById('btnGold').addEventListener('click',()=>toggle('gold'));
+document.getElementById('btnRemove').addEventListener('click',()=>{
+  if(selectedDate){const k=selectedDate.key;delete data[k];saveData(k,null);saveLocal();closeMenu();render();}
+});
+document.getElementById('prevBtn').addEventListener('click',()=>{currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}render();});
+document.getElementById('nextBtn').addEventListener('click',()=>{currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}render();});
+
+function renderReview(){ renderBarChart(); renderWeekGrid(); }
+
+function renderBarChart(){
+  const chart=document.getElementById('barChart');
+  chart.innerHTML='';
+  const months=[];
+  const now=new Date();
+  for(let i=5;i>=0;i--){
+    let y=now.getFullYear(),m=now.getMonth()-i;
+    while(m<0){m+=12;y--;}
+    months.push({y,m});
+  }
+  const maxVal=Math.max(1,...months.map(({y,m})=>{
+    let h=0,s=0,g=0;const days=new Date(y,m+1,0).getDate();
+    for(let d=1;d<=days;d++){const r=data[getKey(y,m,d)]||{};if(r.hanko)h++;if(r.star)s++;if(r.gold)g++;}
+    return Math.max(h,s,g);
+  }));
+  months.forEach(({y,m})=>{
+    let h=0,s=0,g=0;const days=new Date(y,m+1,0).getDate();
+    for(let d=1;d<=days;d++){const r=data[getKey(y,m,d)]||{};if(r.hanko)h++;if(r.star)s++;if(r.gold)g++;}
+    const col=document.createElement('div');col.className='bar-col';
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
+    [[h,'hanko-bar'],[s,'star-bar'],[g,'gold-bar']].forEach(([val,cls])=>{
+      const bar=document.createElement('div');bar.className='bar '+cls;
+      const pct=Math.round((val/maxVal)*100);
+      bar.style.height=Math.max(pct,val>0?4:0)+'%';
+      if(val>0){const v=document.createElement('div');v.className='bar-val';v.textContent=val;bar.appendChild(v);}
+      wrap.appendChild(bar);
+    });
+    const label=document.createElement('div');label.className='bar-label';label.textContent=`${m+1}月`;
+    col.appendChild(wrap);col.appendChild(label);chart.appendChild(col);
+  });
+}
+
+function renderWeekGrid(){
+  const grid=document.getElementById('weekGrid');
+  grid.innerHTML='';
+  const now=new Date();
+  for(let w=7;w>=0;w--){
+    const ws=new Date(now);ws.setDate(now.getDate()-now.getDay()-w*7);
+    const we=new Date(ws);we.setDate(ws.getDate()+6);
+    let total=0,achieved=0;
+    for(let i=0;i<7;i++){
+      const d=new Date(ws);d.setDate(ws.getDate()+i);
+      if(d>now)continue; total++;
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if(data[key]&&data[key].hanko)achieved++;
+    }
+    if(total===0)continue;
+    const rate=Math.round((achieved/total)*100);
+    const card=document.createElement('div');card.className='week-card';
+    card.innerHTML=`
+      <div class="week-card-title">${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}</div>
+      <div class="week-rate-num">${rate}<span style="font-size:12px;font-weight:800;color:var(--ink2)">%</span></div>
+      <div class="week-rate-bar"><div class="week-rate-fill" style="width:${rate}%"></div></div>
+      <div class="week-rate-sub">🔴 ${achieved} / ${total}日</div>`;
+    grid.appendChild(card);
+  }
+}
+
+function exportData(){
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  a.href=url;
+  a.download=`ganbari_calendar_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(typeof imported==='object'){
+        if(confirm('データを読み込みます。今のデータに上書きしますか？')){
+          data=imported;
+          saveLocal();
+          // Firestoreに全日分を書き込み
+          Promise.all(Object.entries(imported).map(([k,v])=>saveData(k,v))).then(()=>{
+            render();alert('✅ データを読み込みました！');
+          });
+        }
+      }
+    }catch(err){alert('❌ ファイルの読み込みに失敗しました');}
+  };
+  reader.readAsText(file);e.target.value='';
+}
+
+function resetData(){
+  if(confirm('⚠️ 全データを消します。本当にいいですか？')){
+    if(confirm('もう一度確認！消したら元に戻せません。本当にいいですか？')){
+      // Firestoreの全ドキュメントを削除
+      Promise.all(Object.keys(data).map(k => saveData(k, null))).then(()=>{
+        data={}; saveLocal(); render(); alert('リセットしました');
+      });
+    }
+  }
+}
+
+function printCalendar(){ window.print(); }
+
+init();
+
+// PWA: Service Worker 登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('SW registered:', reg.scope);
+    }).catch(err => {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
