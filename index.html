@@ -712,72 +712,6 @@ function startSync(){
 }
 
 
-// ===== PIN LOCK =====
-const CORRECT_PIN = '0405';
-let pinCurrent = '';
-let pinLocked = true;
-
-function checkSessionUnlocked() {
-  // セッション中は一度解除したら保持
-  return sessionStorage.getItem('pin_unlocked') === '1';
-}
-
-function unlockApp() {
-  pinLocked = false;
-  sessionStorage.setItem('pin_unlocked', '1');
-  const lock = document.getElementById('pinLock');
-  lock.style.transition = 'opacity 0.4s';
-  lock.style.opacity = '0';
-  setTimeout(() => lock.style.display = 'none', 400);
-}
-
-function pinInput(digit) {
-  if(pinCurrent.length >= 4) return;
-  pinCurrent += digit;
-  updateDots();
-  if(pinCurrent.length === 4) {
-    if(pinCurrent === CORRECT_PIN) {
-      // 正解
-      document.querySelectorAll('.pin-dot').forEach(d => {
-        d.classList.remove('error'); d.classList.add('filled');
-      });
-      setTimeout(unlockApp, 300);
-    } else {
-      // 不正解
-      document.querySelectorAll('.pin-dot').forEach(d => {
-        d.classList.remove('filled'); d.classList.add('error');
-      });
-      document.getElementById('pinError').textContent = '❌ ちがうよ！もういちど';
-      setTimeout(() => {
-        pinCurrent = '';
-        updateDots();
-        document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
-        document.getElementById('pinError').textContent = '';
-      }, 800);
-    }
-  }
-}
-
-function pinDelete() {
-  if(pinCurrent.length === 0) return;
-  pinCurrent = pinCurrent.slice(0, -1);
-  updateDots();
-  document.getElementById('pinError').textContent = '';
-}
-
-function updateDots() {
-  for(let i=0; i<4; i++){
-    const dot = document.getElementById('dot'+i);
-    dot.classList.toggle('filled', i < pinCurrent.length);
-  }
-}
-
-// セッション内で既に解除済みならスキップ
-if(checkSessionUnlocked()) {
-  document.getElementById('pinLock').style.display = 'none';
-  pinLocked = false;
-}
-
 function init(){
   loadLocal(); // まずローカルで即表示
   const now=new Date();
@@ -1042,6 +976,64 @@ if ('serviceWorker' in navigator) {
       console.log('SW registration failed:', err);
     });
   });
+}
+</script>
+
+<script>
+// ===== PIN LOCK（module外で定義してonclickから呼べるようにする）=====
+const CORRECT_PIN = '0405';
+let pinCurrent = '';
+
+function unlockApp() {
+  sessionStorage.setItem('pin_unlocked', '1');
+  const lock = document.getElementById('pinLock');
+  lock.style.transition = 'opacity 0.4s';
+  lock.style.opacity = '0';
+  setTimeout(() => lock.style.display = 'none', 400);
+}
+
+function pinInput(digit) {
+  if(pinCurrent.length >= 4) return;
+  pinCurrent += digit;
+  updateDots();
+  if(pinCurrent.length === 4) {
+    if(pinCurrent === CORRECT_PIN) {
+      document.querySelectorAll('.pin-dot').forEach(d => {
+        d.classList.remove('error'); d.classList.add('filled');
+      });
+      setTimeout(unlockApp, 300);
+    } else {
+      document.querySelectorAll('.pin-dot').forEach(d => {
+        d.classList.remove('filled'); d.classList.add('error');
+      });
+      document.getElementById('pinError').textContent = '❌ ちがうよ！もういちど';
+      setTimeout(() => {
+        pinCurrent = '';
+        updateDots();
+        document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+        document.getElementById('pinError').textContent = '';
+      }, 800);
+    }
+  }
+}
+
+function pinDelete() {
+  if(pinCurrent.length === 0) return;
+  pinCurrent = pinCurrent.slice(0, -1);
+  updateDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function updateDots() {
+  for(let i=0; i<4; i++){
+    const dot = document.getElementById('dot'+i);
+    dot.classList.toggle('filled', i < pinCurrent.length);
+  }
+}
+
+// セッション内で既に解除済みならスキップ
+if(sessionStorage.getItem('pin_unlocked') === '1') {
+  document.getElementById('pinLock').style.display = 'none';
 }
 </script>
 </body>
