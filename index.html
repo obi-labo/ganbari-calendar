@@ -656,68 +656,72 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const COLLECTION = 'calendar';
 
+// Firebase関数をwindow経由で通常scriptから使えるようにする
+window._fbDb = db;
+window._fbDoc = doc;
+window._fbSetDoc = setDoc;
+window._fbDeleteDoc = deleteDoc;
+window._fbOnSnapshot = onSnapshot;
+window._fbCollection = collection;
+
+// Firebaseの準備完了を通知
+window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<script>
+// ===== APP LOGIC =====
+const COLLECTION = 'calendar';
 let data = {};
 let currentYear, currentMonth, selectedDate = null;
 
 function getKey(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 
-// ローカルキャッシュ（オフライン時のフォールバック）
 function saveLocal(){ try{localStorage.setItem('ganbari_cache', JSON.stringify(data));}catch(e){} }
 function loadLocal(){ try{const r=localStorage.getItem('ganbari_cache');if(r)data=JSON.parse(r);}catch(e){} }
 
-// Firestoreに1日分を保存・削除
-async function saveData(key, rec){
-  setStatus('syncing');
-  try{
-    const hasData = rec && (rec.hanko || rec.star || rec.gold || rec.yasumi);
-    if(hasData){
-      await setDoc(doc(db, COLLECTION, key), rec);
-    } else {
-      await deleteDoc(doc(db, COLLECTION, key));
-    }
-  }catch(e){
-    console.warn('Firebase保存失敗:', e);
-    setStatus('offline');
-  }
-}
-
-// 接続・同期状態の表示
 function setStatus(state){
-  const el = document.getElementById('syncStatus');
-  if(!el) return;
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
   if(state==='synced')  { el.textContent='☁️ 同期済み';   el.style.color='#6bcb77'; }
   if(state==='syncing') { el.textContent='🔄 同期中…';    el.style.color='#ffd93d'; }
   if(state==='offline') { el.textContent='📵 オフライン'; el.style.color='#ff6b9d'; }
 }
 
-// Firestoreリアルタイム監視
+async function saveData(key, rec){
+  setStatus('syncing');
+  try{
+    const db=window._fbDb, doc=window._fbDoc, setDoc=window._fbSetDoc, deleteDoc=window._fbDeleteDoc;
+    const hasData = rec && (rec.hanko || rec.star || rec.gold || rec.yasumi);
+    if(hasData){ await setDoc(doc(db, COLLECTION, key), rec); }
+    else { await deleteDoc(doc(db, COLLECTION, key)); }
+  }catch(e){ console.warn('Firebase保存失敗:', e); setStatus('offline'); }
+}
+
 function startSync(){
   setStatus('syncing');
+  const db=window._fbDb, collection=window._fbCollection, onSnapshot=window._fbOnSnapshot;
   onSnapshot(
     collection(db, COLLECTION),
     (snapshot) => {
-      data = {};
-      snapshot.forEach(d => { data[d.id] = d.data(); });
+      data={};
+      snapshot.forEach(d=>{ data[d.id]=d.data(); });
       saveLocal();
       setStatus('synced');
       render();
     },
-    (err) => {
-      console.warn('同期エラー:', err);
-      setStatus('offline');
-    }
+    (err) => { console.warn('同期エラー:', err); setStatus('offline'); }
   );
 }
 
-
 function init(){
-  loadLocal(); // まずローカルで即表示
+  loadLocal();
   const now=new Date();
   currentYear=now.getFullYear(); currentMonth=now.getMonth();
   render();
-  startSync(); // Firestore監視スタート
+  // Firebaseの準備ができたら同期開始
+  if(window._fbDb){ startSync(); }
+  else { window.addEventListener('firebaseReady', startSync); }
 }
 
 function switchTab(name,btn){
@@ -767,8 +771,7 @@ function render(){
     const rec=data[key]||{};
     const isToday=isCurrent&&today.getDate()===d;
     const isFuture=date>today;
-
-    const isWeekend = (dow===0||dow===6);
+    const isWeekend=(dow===0||dow===6);
 
     const cell=document.createElement('div');
     cell.className='day-cell';
@@ -787,8 +790,7 @@ function render(){
     if(rec.star){const s=document.createElement('div');s.className='stamp star';s.textContent='⭐';stamps.appendChild(s);}
     if(rec.gold){const s=document.createElement('div');s.className='stamp gold';s.textContent='🏅';stamps.appendChild(s);}
 
-    // 土日はクリック不可、それ以外（未来含め祝日設定のため過去のみ制限しない）
-    if(!isWeekend && !isFuture) cell.addEventListener('click',e=>{e.stopPropagation();openMenu(d,key,e);});
+    if(!isWeekend&&!isFuture) cell.addEventListener('click',e=>{e.stopPropagation();openMenu(d,key,e);});
     grid.appendChild(cell);
   }
   renderAchievements();
@@ -845,7 +847,7 @@ function toggle(field){
   data[key][field]=!data[key][field];
   if(field==='gold'&&data[key][field])data[key]['star']=false;
   if(field==='star'&&data[key][field])data[key]['gold']=false;
-  saveData(key, data[key]); // Firestore保存
+  saveData(key, data[key]);
   saveLocal();
   closeMenu();render();
 }
@@ -941,7 +943,6 @@ function importData(e){
         if(confirm('データを読み込みます。今のデータに上書きしますか？')){
           data=imported;
           saveLocal();
-          // Firestoreに全日分を書き込み
           Promise.all(Object.entries(imported).map(([k,v])=>saveData(k,v))).then(()=>{
             render();alert('✅ データを読み込みました！');
           });
@@ -955,9 +956,8 @@ function importData(e){
 function resetData(){
   if(confirm('⚠️ 全データを消します。本当にいいですか？')){
     if(confirm('もう一度確認！消したら元に戻せません。本当にいいですか？')){
-      // Firestoreの全ドキュメントを削除
-      Promise.all(Object.keys(data).map(k => saveData(k, null))).then(()=>{
-        data={}; saveLocal(); render(); alert('リセットしました');
+      Promise.all(Object.keys(data).map(k=>saveData(k,null))).then(()=>{
+        data={};saveLocal();render();alert('リセットしました');
       });
     }
   }
@@ -965,18 +965,14 @@ function resetData(){
 
 function printCalendar(){ window.print(); }
 
-init();
-
-// PWA: Service Worker 登録
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      console.log('SW registered:', reg.scope);
-    }).catch(err => {
-      console.log('SW registration failed:', err);
-    });
+// PWA: Service Worker登録
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
+
+init();
 </script>
 
 <script>
